@@ -1,0 +1,8 @@
+onnxruntime
+numpy
+sounddevice
+levenshtein
+jinja2
+requests
+pyyaml
+loguru
