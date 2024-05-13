@@ -47,8 +47,8 @@ If you are on Windows, I would recommend WSL with an Ubuntu image.  Proper Windo
       1. To pull the code, from the Vikky directory use: `git submodule update --init --recursive`
       2. Move to the right subdirectory: `cd submodules/whisper.cpp`
       3. Compile for your system [(see the Documentation)](https://github.com/ggerganov/whisper.cpp), e.g.
-         1. Linux with [CUDA](https://github.com/ggerganov/whisper.cpp?tab=readme-ov-file#nvidia-gpu-support): `WHISPER_CUDA=1 make libwhisper.so -j`
-         2. Mac with [CoreML](https://github.com/ggerganov/whisper.cpp?tab=readme-ov-file#core-ml-support): `WHISPER_COREML=1 make -j`
+         1. Linux with [CUDA](https://github.com/ggerganov/whisper.cpp?tab=readme-ov-file#nvidia-gpu-support): `make libwhisper.so -j`
+         2. Mac with [CoreML](https://github.com/ggerganov/whisper.cpp?tab=readme-ov-file#core-ml-support): `make -j`
 5. For the LLM, you have two option:
    1. Use a commercial API or install an inference backend yourself, such as Ollama:
       1. Find and install a backend with an OpenAI compatible API (most of them)
@@ -56,17 +56,3 @@ If you are on Windows, I would recommend WSL with an Ubuntu image.  Proper Windo
          1. update `completion_url` to the URL of your local server
          2. for commercial APIs, add the `api_key`
          3. remove the LlamaServer configurations (make them null)
-
-## Technologies
-
-1. Raspberry PI
-2. Python
-3. Google Assistant
-4. Dialogflow
-5. Tensorflow
-6. OpenCV
-7. Deep Learning
-8. Natural Language Processing
-9. Computer Vision
-10. Speech Recognition
-11. Speech Synthesis
