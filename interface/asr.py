@@ -1,6 +1,7 @@
 import ctypes
 
 import numpy as np
+from loguru import logger
 
 from . import whisper_cpp_wrapper
 
@@ -36,9 +37,15 @@ class ASR:
 
         # Run the model
         whisper_cpp_audio = audio.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+
+        logger.info(f"Whisper_cpp_audio: {whisper_cpp_audio}")
+
         result = whisper_cpp_wrapper.whisper_full(
             self.ctx, self.params, whisper_cpp_audio, len(audio)
         )
+
+        logger.info(f"Result: {result}")
+
         if result != 0:
             raise Exception(f"Error from whisper.cpp: {result}")
 

@@ -75,8 +75,7 @@ class Vikky:
         completion_url: str,
         wake_word: str | None = None,
         announcement: str | None = None,
-        personality_preprompt: Sequence[dict[str,
-                                             str]] = DEFAULT_PERSONALITY_PREPROMPT,
+        personality_preprompt: Sequence[dict[str, str]] = DEFAULT_PERSONALITY_PREPROMPT,
         interruptible: bool = False,
     ) -> None:
         """
@@ -98,16 +97,14 @@ class Vikky:
         self.completion_url = completion_url
         self.wake_word = wake_word
 
-        self._vad_model = vad.VAD(model_path=str(
-            Path.cwd() / "models" / VAD_MODEL))
+        self._vad_model = vad.VAD(model_path=str(Path.cwd() / "models" / VAD_MODEL))
         self._asr_model = asr.ASR(model=str(Path.cwd() / "models" / ASR_MODEL))
         self._tts = tts.Synthesizer(
             model_path=str(Path.cwd() / "models" / VOICE_MODEL), use_cuda=False
         )
 
         self._samples: List[np.ndarray] = []
-        self._sample_queue: queue.Queue[Tuple[np.ndarray, np.ndarray]] = queue.Queue(
-        )
+        self._sample_queue: queue.Queue[Tuple[np.ndarray, np.ndarray]] = queue.Queue()
         self._buffer: queue.Queue[np.ndarray] = queue.Queue(
             maxsize=BUFFER_SIZE // VAD_SIZE
         )
@@ -142,8 +139,7 @@ class Vikky:
             indata: np.ndarray, frames: int, time: Any, status: CallbackFlags
         ):
             data = indata.copy().squeeze()  # Reduce to single channel if necessary
-            vad_confidence = self._vad_model.process_chunk(
-                data) > VAD_THRESHOLD
+            vad_confidence = self._vad_model.process_chunk(data) > VAD_THRESHOLD
             self._sample_queue.put((data, vad_confidence))
 
         self.input_stream = sd.InputStream(
@@ -163,8 +159,7 @@ class Vikky:
         personality_preprompt = []
         for line in config.personality_preprompt:
             personality_preprompt.append(
-                {"role": list(line.keys())[0],
-                 "content": list(line.values())[0]}
+                {"role": list(line.keys())[0], "content": list(line.values())[0]}
             )
 
         return cls(
@@ -318,8 +313,7 @@ class Vikky:
             logger.success(f"ASR text: '{detected_text}'")
 
             if self.wake_word and not self._wakeword_detected(detected_text):
-                logger.info(
-                    f"Required wake word {self.wake_word=} not detected.")
+                logger.info(f"Required wake word {self.wake_word=} not detected.")
             else:
                 self.llm_queue.put(detected_text)
                 self.processing = True
@@ -337,6 +331,7 @@ class Vikky:
         Performs automatic speech recognition on the collected samples.
         """
         audio = np.concatenate(samples)
+        logger.info(f"Audio: {audio}")
 
         detected_text = self._asr_model.transcribe(audio)
         return detected_text
@@ -408,8 +403,7 @@ class Vikky:
 
                 if finished:
                     self.messages.append(
-                        {"role": "assistant",
-                            "content": " ".join(assistant_text)}
+                        {"role": "assistant", "content": " ".join(assistant_text)}
                     )
                     # if interrupted:
                     #     self.messages.append(
@@ -471,8 +465,7 @@ class Vikky:
         played_samples = elapsed_time * self._tts.rate
 
         # Calculate percentage of audio played
-        percentage_played = min(
-            int((played_samples / total_samples * 100)), 100)
+        percentage_played = min(int((played_samples / total_samples * 100)), 100)
         return interrupted, percentage_played
 
     def process_LLM(self):
@@ -484,8 +477,7 @@ class Vikky:
             try:
                 detected_text = self.llm_queue.get(timeout=0.1)
 
-                self.messages.append(
-                    {"role": "user", "content": detected_text})
+                self.messages.append({"role": "user", "content": detected_text})
 
                 prompt = self.template.render(
                     messages=self.messages,
