@@ -51,10 +51,14 @@ class ASR:
 
         # Get the text
         n_segments = whisper_cpp_wrapper.whisper_full_n_segments((self.ctx))
+        logger.info(f"n_segments: {n_segments}")
+
         text = [
             whisper_cpp_wrapper.whisper_full_get_segment_text((self.ctx), i)
             for i in range(n_segments)
         ]
+
+        logger.info(f"Text: {text}")
 
         if not text:
             return ""
