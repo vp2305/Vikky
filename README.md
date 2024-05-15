@@ -47,7 +47,7 @@ If you are on Windows, I would recommend WSL with an Ubuntu image.  Proper Windo
       1. To pull the code, from the Vikky directory use: `git submodule update --init --recursive`
       2. Move to the right subdirectory: `cd submodules/whisper.cpp`
       3. Compile for your system [(see the Documentation)](https://github.com/ggerganov/whisper.cpp), e.g.
-         1. Linux with [CUDA](https://github.com/ggerganov/whisper.cpp?tab=readme-ov-file#nvidia-gpu-support): `make libwhisper.so -j`
+         1. Linux with [CUDA](https://github.com/ggerganov/whisper.cpp?tab=readme-ov-file#nvidia-gpu-support): `WHISPER_COREML=0 make libwhisper.so -j`
          2. Mac with [CoreML](https://github.com/ggerganov/whisper.cpp?tab=readme-ov-file#core-ml-support): `WHISPER_COREML=1 make -j`
 5. For the LLM, you have two option:
    1. Use a commercial API or install an inference backend yourself, such as Ollama:
