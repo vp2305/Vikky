@@ -8,7 +8,10 @@ from urllib3 import HTTPConnectionPool
 app = Flask(__name__)
 ollamaAPI = "http://localhost:11434/api"
 model = "llama3"
-CHUNK_SIZE = 4096
+CHUNK_SIZE = 1024
+
+# Use a session for connection pooling
+session = requests.Session()
 
 
 @app.route("/", methods=["GET"])
@@ -19,14 +22,17 @@ def index():
 @app.route("/generate", methods=["POST"])
 def ollama():
     try:
-        response = requests.post(ollamaAPI + "/generate", json=request.json)
-
+        response = session.post(ollamaAPI + "/generate", json=request.json, stream=True)
         return Response(
             stream_with_context(response.iter_content(chunk_size=CHUNK_SIZE)),
-            content_type=response.headers["content-type"],
+            content_type=response.headers.get(
+                "content-type", "application/octet-stream"
+            ),
         )
-    except HTTPConnectionPool as e:
+    except requests.exceptions.ConnectionError:
         return jsonify({"error": "Error connecting to ollama server"}), 500
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -78,4 +84,4 @@ def temporary():
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    app.run(debug=True, host="0.0.0.0", port=7777)
+    app.run(debug=True, host="0.0.0.0", port=7777, threaded=True)
