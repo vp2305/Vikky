@@ -48,7 +48,7 @@ If you are on Windows, I would recommend WSL with an Ubuntu image.  Proper Windo
       2. Move to the right subdirectory: `cd submodules/whisper.cpp`
       3. Compile for your system [(see the Documentation)](https://github.com/ggerganov/whisper.cpp), e.g.
          1. Linux with [CUDA](https://github.com/ggerganov/whisper.cpp?tab=readme-ov-file#nvidia-gpu-support): `make libwhisper.so -j`
-         2. Mac with [CoreML](https://github.com/ggerganov/whisper.cpp?tab=readme-ov-file#core-ml-support): `make -j`
+         2. Mac with [CoreML](https://github.com/ggerganov/whisper.cpp?tab=readme-ov-file#core-ml-support): `WHISPER_COREML=1 make -j`
 5. For the LLM, you have two option:
    1. Use a commercial API or install an inference backend yourself, such as Ollama:
       1. Find and install a backend with an OpenAI compatible API (most of them)
