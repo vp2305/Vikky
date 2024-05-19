@@ -38,27 +38,20 @@ class ASR:
         # Run the model
         whisper_cpp_audio = audio.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
 
-        logger.info(f"Whisper_cpp_audio: {whisper_cpp_audio}")
-
         result = whisper_cpp_wrapper.whisper_full(
             self.ctx, self.params, whisper_cpp_audio, len(audio)
         )
-
-        logger.info(f"Result: {result}")
 
         if result != 0:
             raise Exception(f"Error from whisper.cpp: {result}")
 
         # Get the text
         n_segments = whisper_cpp_wrapper.whisper_full_n_segments((self.ctx))
-        logger.info(f"n_segments: {n_segments}")
 
         text = [
             whisper_cpp_wrapper.whisper_full_get_segment_text((self.ctx), i)
             for i in range(n_segments)
         ]
-
-        logger.info(f"Text: {text}")
 
         if not text:
             return ""

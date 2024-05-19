@@ -219,7 +219,6 @@ class PiperConfig:
             noise_scale=inference.get("noise_scale", 0.667),
             length_scale=inference.get("length_scale", 1.0),
             noise_w=inference.get("noise_w", 0.8),
-            #
             espeak_voice=config["espeak"]["voice"],
             phoneme_id_map=config["phoneme_id_map"],
             phoneme_type=PhonemeType(config.get("phoneme_type", PhonemeType.ESPEAK)),
@@ -262,7 +261,9 @@ class Synthesizer:
         Converts the given phonemes to audio.
     """
 
-    def __init__(self, model_path: str, use_cuda: bool):
+    def __init__(
+        self, model_path: str, use_cuda: bool, speaker_id: Optional[int] = None
+    ):
         self.session = self._initialize_session(model_path, use_cuda)
         self.id_map = PHONEME_ID_MAP
         try:
@@ -291,6 +292,7 @@ class Synthesizer:
             )
         self.config = PiperConfig.from_dict(config_dict)
         self.rate = self.config.sample_rate
+        self.speaker_id = speaker_id
 
     def _initialize_session(
         self, model_path: str, use_cuda: bool
@@ -360,7 +362,6 @@ class Synthesizer:
     def _synthesize_ids_to_raw(
         self,
         phoneme_ids: List[int],
-        speaker_id: Optional[int] = None,
         length_scale: Optional[float] = None,
         noise_scale: Optional[float] = None,
         noise_w: Optional[float] = None,
@@ -383,14 +384,14 @@ class Synthesizer:
             dtype=np.float32,
         )
 
-        if (self.config.num_speakers > 1) and (speaker_id is None):
+        if (self.config.num_speakers > 1) and (self.speaker_id is None):
             # Default speaker
-            speaker_id = 0
+            self.speaker_id = 0
 
         sid = None
 
-        if speaker_id is not None:
-            sid = np.array([speaker_id], dtype=np.int64)
+        if self.speaker_id is not None:
+            sid = np.array([self.speaker_id], dtype=np.int64)
 
         # Synthesize through Onnx
         audio = self.session.run(

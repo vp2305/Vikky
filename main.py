@@ -54,6 +54,7 @@ class VikkyConfig:
     personality_preprompt: List[dict[str, str]]
     interruptible: bool
     voice_model: str = "glados.onnx"
+    speaker_id: int = None
 
     @classmethod
     def from_yaml(cls, path: str, key_to_config: Sequence[str] | None = ("Vikky",)):
@@ -73,6 +74,7 @@ class Vikky:
     def __init__(
         self,
         voice_model: str,
+        speaker_id: int,
         completion_url: str,
         wake_word: str | None = None,
         announcement: str | None = None,
@@ -101,7 +103,9 @@ class Vikky:
         self._vad_model = vad.VAD(model_path=str(Path.cwd() / "models" / VAD_MODEL))
         self._asr_model = asr.ASR(model=str(Path.cwd() / "models" / ASR_MODEL))
         self._tts = tts.Synthesizer(
-            model_path=str(Path.cwd() / "models" / voice_model), use_cuda=False
+            model_path=str(Path.cwd() / "models" / voice_model),
+            use_cuda=False,
+            speaker_id=speaker_id,
         )
 
         self._samples: List[np.ndarray] = []
@@ -165,6 +169,7 @@ class Vikky:
 
         return cls(
             voice_model=config.voice_model,
+            speaker_id=config.speaker_id,
             completion_url=config.completion_url,
             wake_word=config.wake_word,
             personality_preprompt=personality_preprompt,
@@ -333,7 +338,6 @@ class Vikky:
         Performs automatic speech recognition on the collected samples.
         """
         audio = np.concatenate(samples)
-        logger.info(f"Audio: {audio}")
 
         detected_text = self._asr_model.transcribe(audio)
         return detected_text
@@ -342,7 +346,6 @@ class Vikky:
         """
         Resets the recording state and clears buffers.
         """
-        logger.info("Resetting recorder...")
         self._recording_started = False
         self._samples.clear()
         self._gap_counter = 0
@@ -509,7 +512,6 @@ class Vikky:
                             break  # If the stop flag is set from new voice input, halt processing
                         if line:  # Filter out empty keep-alive new lines
                             line = self._clean_raw_bytes(line)
-                            logger.info(f"LLM response: {line['response']}")
                             next_token = self._process_line(line)
                             if next_token:
                                 sentence.append(next_token)
@@ -552,7 +554,6 @@ class Vikky:
             .replace(":", " ")
             .replace("*", " ")
         )
-        logger.info(f"LLM sentence: {sentence}")
         if sentence:
             self.tts_queue.put(sentence)
 
