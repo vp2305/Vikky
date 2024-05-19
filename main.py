@@ -29,7 +29,6 @@ logger.add(
 ASR_MODEL = "ggml-medium-32-2.en.bin"
 VAD_MODEL = "silero_vad.onnx"
 VIKKY_CONFIG_PATH = "vikky_config.yml"
-VOICE_MODEL = "en_US-libritts_r-medium.onnx"
 
 LLM_STOP_SEQUENCE = "<|eot_id|>"  # End of sentence token for Meta-Llama-3
 LLAMA3_TEMPLATE = "{% set loop_messages = messages %}{% for message in loop_messages %}{% set content = '<|start_header_id|>' + message['role'] + '<|end_header_id|>\n\n'+ message['content'] | trim + '<|eot_id|>' %}{% if loop.index0 == 0 %}{% set content = bos_token + content %}{% endif %}{{ content }}{% endfor %}{% if add_generation_prompt %}{{ '<|start_header_id|>assistant<|end_header_id|>\n\n' }}{% endif %}"
@@ -54,6 +53,7 @@ class VikkyConfig:
     announcement: Optional[str]
     personality_preprompt: List[dict[str, str]]
     interruptible: bool
+    voice_model: str = "glados.onnx"
 
     @classmethod
     def from_yaml(cls, path: str, key_to_config: Sequence[str] | None = ("Vikky",)):
@@ -72,6 +72,7 @@ class VikkyConfig:
 class Vikky:
     def __init__(
         self,
+        voice_model: str,
         completion_url: str,
         wake_word: str | None = None,
         announcement: str | None = None,
@@ -100,7 +101,7 @@ class Vikky:
         self._vad_model = vad.VAD(model_path=str(Path.cwd() / "models" / VAD_MODEL))
         self._asr_model = asr.ASR(model=str(Path.cwd() / "models" / ASR_MODEL))
         self._tts = tts.Synthesizer(
-            model_path=str(Path.cwd() / "models" / VOICE_MODEL), use_cuda=False
+            model_path=str(Path.cwd() / "models" / voice_model), use_cuda=False
         )
 
         self._samples: List[np.ndarray] = []
@@ -163,6 +164,7 @@ class Vikky:
             )
 
         return cls(
+            voice_model=config.voice_model,
             completion_url=config.completion_url,
             wake_word=config.wake_word,
             personality_preprompt=personality_preprompt,

@@ -1,11 +1,13 @@
 import re
 import subprocess
-from typing import List, Optional
-from .config import PiperConfig
-
 import numpy as np
 import onnxruntime
 import json
+
+from typing import List, Optional, Any, Dict, Mapping, Sequence
+from dataclasses import dataclass
+from enum import Enum
+from loguru import logger
 
 # Constants
 MAX_WAV_VALUE = 32767.0
@@ -175,6 +177,55 @@ PHONEME_ID_MAP = {
 }
 
 
+class PhonemeType(str, Enum):
+    ESPEAK = "espeak"
+    TEXT = "text"
+
+
+@dataclass
+class PiperConfig:
+    """Piper configuration"""
+
+    num_symbols: int
+    """Number of phonemes"""
+
+    num_speakers: int
+    """Number of speakers"""
+
+    sample_rate: int
+    """Sample rate of output audio"""
+
+    espeak_voice: str
+    """Name of espeak-ng voice or alphabet"""
+
+    length_scale: float
+    noise_scale: float
+    noise_w: float
+
+    phoneme_id_map: Mapping[str, Sequence[int]]
+    """Phoneme -> [id,]"""
+
+    phoneme_type: PhonemeType
+    """espeak or text"""
+
+    @staticmethod
+    def from_dict(config: Dict[str, Any]) -> "PiperConfig":
+        inference = config.get("inference", {})
+
+        return PiperConfig(
+            num_symbols=config["num_symbols"],
+            num_speakers=config["num_speakers"],
+            sample_rate=config["audio"]["sample_rate"],
+            noise_scale=inference.get("noise_scale", 0.667),
+            length_scale=inference.get("length_scale", 1.0),
+            noise_w=inference.get("noise_w", 0.8),
+            #
+            espeak_voice=config["espeak"]["voice"],
+            phoneme_id_map=config["phoneme_id_map"],
+            phoneme_type=PhonemeType(config.get("phoneme_type", PhonemeType.ESPEAK)),
+        )
+
+
 class Synthesizer:
     """Synthesizer, based on the VITS model.
 
@@ -213,10 +264,32 @@ class Synthesizer:
 
     def __init__(self, model_path: str, use_cuda: bool):
         self.session = self._initialize_session(model_path, use_cuda)
-        with open(model_path + ".json", "r", encoding="utf-8") as config_file:
-            config_dict = json.load(config_file)
-        self.config = PiperConfig.from_dict(config_dict)
         self.id_map = PHONEME_ID_MAP
+        try:
+            # Load the configuration file
+            config_file_path = model_path + ".json"
+            with open(config_file_path, "r", encoding="utf-8") as config_file:
+                config_dict = json.load(config_file)
+        except FileNotFoundError:
+            logger.error(f"Configuration file not found at path: {config_file_path}")
+            raise FileNotFoundError(
+                f"Configuration file not found at path: {config_file_path}"
+            )
+        except json.JSONDecodeError as e:
+            logger.error(
+                f"Invalid JSON format in configuration file at {config_file_path}: {e}"
+            )
+            raise ValueError(
+                f"Configuration file at path: {config_file_path} is not a valid JSON. Error: {e}"
+            )
+        except Exception as e:
+            logger.error(
+                f"Unexpected error while reading configuration file at {config_file_path}: {e}"
+            )
+            raise RuntimeError(
+                f"An unexpected error occurred while reading the configuration file at path: {config_file_path}. Error: {e}"
+            )
+        self.config = PiperConfig.from_dict(config_dict)
         self.rate = self.config.sample_rate
 
     def _initialize_session(
@@ -290,7 +363,7 @@ class Synthesizer:
         speaker_id: Optional[int] = None,
         length_scale: Optional[float] = None,
         noise_scale: Optional[float] = None,
-        noise_w: Optional[float] = None,  # 0.8
+        noise_w: Optional[float] = None,
     ) -> bytes:
         """Synthesize raw audio from phoneme ids."""
         if length_scale is None:
